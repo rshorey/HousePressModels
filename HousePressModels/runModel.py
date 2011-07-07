@@ -97,14 +97,6 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 			topicProbs += log(docByTop[d] + alpha*docMidFrac)
 			topicProbs -= log(tokensInDoc[d] + alpha)
 
-			#to find, resolve and explain inf/nan issues:
-			if any(isnan(topicProbs)) or any(isinf(topicProbs)):
-				print clustDocsUsingTop[currentClust]
-				print clustsUsingTop
-				print "topic"
-				print topicProbs
-				topicProbs = nan_to_num(topicProbs)
-
 
 
 			#normalize and exponentiate topic probs
@@ -212,12 +204,6 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 		tokenProbs -= log(tokensInDoc[d] + alpha)
 
 		clustProbs = append(clustProbs,sum(tokenProbs)+log(zeta))
-
-		#to find, resolve and explain inf/nan issues:
-		if any(isnan(clustProbs)) or any(isinf(clustProbs)):
-			print "cluster"
-			print clustProbs
-			clustProbs = nan_to_num(clustProbs)
 
 		#sample new cluster
 		m = max(clustProbs)
