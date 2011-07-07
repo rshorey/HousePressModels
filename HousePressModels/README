@@ -1,0 +1,12 @@
+Files for running models on the Grimmer house press release corpus
+
+modelStateClass.py: defines an object class for the model state.
+
+readData.py: reads files and initializes a state object. serializes the object
+	using the python "cPickle" library.
+
+runModel.py: runs a cluster-based topic model on the output of readData.py
+
+printOutput.py: creates topicKeys, docByTopic, docsInClust and clustByTopic files.
+
+
