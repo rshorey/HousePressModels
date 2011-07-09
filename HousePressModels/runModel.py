@@ -2,6 +2,7 @@ import cPickle
 from numpy import *
 import modelStateClass
 import sys
+from optimizeParams import *
 
 #takes the following command line arguments:
 #1) filename of "pickled" file of model state with data read in but
@@ -252,8 +253,18 @@ def iterate(modelState,alpha0,alpha1,alpha,beta,zeta,numIts):
 		print i
 		modelState.numIts = i
 		if i%10 == 0:
-			writeState(modelState,"/m/canvas1/rshorey/Grimmer/test_checkpoint.dat")
+			writeState(modelState,"/m/canvas1/rshorey/Grimmer/t_checkpoint.dat")
 		modelState = gibbs(modelState,alpha0,alpha1,alpha,beta,zeta)
+
+		#estimate hyperparameters:
+		if i>100 and i%5 == 0:
+			newParams = optimize(alpha0,alpha1,alpha,beta,zeta,1.0,modelState,5)
+			print newParams
+			alpha0 = newParams[0]
+			alpha1 = newParams[1]
+			alpha = newParams[2]
+			beta = newParams[3]
+			zeta = newParams[4]
 		i += 1
 	return modelState	
 
