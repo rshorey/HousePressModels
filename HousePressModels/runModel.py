@@ -164,9 +164,12 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 				if assignedClusts[tmpd]>=deadClust:
 					assignedClusts[tmpd] -= 1 
 
+
+
 		#compute probabilities
 		#clust contrib:
 		clustProbs = log(docsInClust)
+		clustProbs = append(clustProbs,log(zeta))
 		#print shape(clustDocsUsingTop)
 		#print shape(docsInClust)
 
@@ -174,7 +177,6 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 
 
 		#doc contrib:
-
 		topFrac = (clustsUsingTop[tokenTops] + alpha0/numTops)	
 		topFrac /= (numClusts + alpha0)
 
@@ -183,28 +185,31 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 			+ alpha1*topFrac)
 		midFrac /= (docsInClust  + alpha1)
 
-
-		tokenProbs = log(docByTop[d][tokenTops] +
-			alpha*transpose(midFrac))
-		tokenProbs -= log(tokensInDoc[d] + alpha)
-		#print sum(tokenProbs,axis=1)
-		#print clustProbs			
-
-		clustProbs += sum(tokenProbs,axis=1)
-
-		#add on prob for "new cluster"
-		topFrac = (clustsUsingTop[tokenTops] + 
+		#prob for new cluster
+		newClustTopFrac = (clustsUsingTop[tokenTops] + 
 			 alpha0/numTops)	
-		topFrac /= (numClusts  + alpha0)
+		newClustTopFrac /= (numClusts + 1+ alpha0)
+
+		newClustMidFrac = alpha1*newClustTopFrac
+		newClustMidFrac /= (alpha1)
 
 
-		midFrac = alpha1*topFrac
-		midFrac /= (alpha1)
+		#add on prob for new cluster:
+		midFrac = column_stack([midFrac,newClustMidFrac])
 
-		tokenProbs = log(docByTop[d][tokenTops]+alpha*midFrac)
-		tokenProbs -= log(tokensInDoc[d] + alpha)
 
-		clustProbs = append(clustProbs,sum(tokenProbs)+log(zeta))
+		docByTop[d:,] = 0
+		tokensInDoc[d] = 0
+
+		tokenInd = 0
+		for wordTop in tokenTops:
+			docByTop[d][wordTop] += 1
+			tokensInDoc[d] += 1
+			clustProbs += log(docByTop[d][wordTop] +
+				alpha*midFrac[tokenInd])
+			clustProbs -= log(tokensInDoc[d] + alpha)
+			tokenInd += 1
+
 
 		#sample new cluster
 		m = max(clustProbs)
@@ -240,6 +245,8 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 	modelState.clustDocsUsingTop = clustDocsUsingTop
 	modelState.numClusts = numClusts
 	modelState.assignedClusts = assignedClusts
+	modelState.docByTop = docByTop
+	modelState.tokensInDoc = tokensInDoc
 		
 	print "clusters sampled"
 
