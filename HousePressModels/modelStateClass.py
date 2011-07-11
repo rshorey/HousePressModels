@@ -31,6 +31,21 @@ class state:
 				self.tokensInTop[t] += 1
 				self.docByTop[d][t] += 1
 			
+	def processInitializedTopics(self, numTops, assignedTops):
+		self.numTops = numTops
+		self.assignedTops = assignedTops
+		self.typeByTop = zeros((self.numTypes,self.numTops))
+		self.tokensInTop = zeros(numTops)
+		self.docByTop = zeros((self.numDocs,numTops))
+		for d in xrange(0,self.numDocs):
+			num = self.tokensInDoc[d]
+			for i in xrange(0,num):
+				currentType = self.docTokens[d][i]
+				t = self.assignedTops[d][i]
+				self.typeByTop[currentType][t] += 1
+				self.tokensInTop[t] += 1
+				self.docByTop[d][t] += 1
+			
 
 	def assignClusters(self, zeta):
 		numClusts = 0

@@ -7,10 +7,12 @@ from optimizeParams import *
 #takes the following command line arguments:
 #1) filename of "pickled" file of model state with data read in but
 	#topics/clusts not yet initialized
-#2-6) initial values for alpha0, alpha1, alpha, beta, zeta
-#7) number of topics
-#8) number of iterations
-#9) filename for output pickle file of state.
+#2) "r" if data was read in (and topics need to be assigned), "m" if
+	#topics already initialized by mallet
+#3-7) initial values for alpha0, alpha1, alpha, beta, zeta
+#8) number of topics
+#9) number of iterations
+#10) filename for output pickle file of state.
 
 def getState(input):
 	#unpickles the state that is saved in the file called "input"
@@ -19,9 +21,10 @@ def getState(input):
 	f.close()
 	return modelState
 
-def initialize(modelState,zeta,numTops):
+def initialize(modelState,inputType,zeta,numTops):
 	#makes initial cluster and topic assignments
-	modelState.assignTopics(numTops)
+	if inputType=="r":
+		modelState.assignTopics(numTops)
 	modelState.assignClusters(zeta)
 	return modelState
 
@@ -210,7 +213,6 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 			clustProbs -= log(tokensInDoc[d] + alpha)
 			tokenInd += 1
 
-
 		#sample new cluster
 		m = max(clustProbs)
 		clustProbs -= m
@@ -219,6 +221,8 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 		clustProbs /= norm
 		sample = random.multinomial(1,clustProbs)
 		newClust = where(sample==1)[0][0]
+
+
 		#set up rows for new cluster
 		if newClust == numClusts:
 			#print "new cluster created"
@@ -240,7 +244,6 @@ def gibbs(modelState,alpha0,alpha1,alpha,beta,zeta):
 		assignedClusts[d] = newClust
 
 
-
 	modelState.docsInClust = docsInClust
 	modelState.clustDocsUsingTop = clustDocsUsingTop
 	modelState.numClusts = numClusts
@@ -260,11 +263,11 @@ def iterate(modelState,alpha0,alpha1,alpha,beta,zeta,numIts):
 		print i
 		modelState.numIts = i
 		if i%10 == 0:
-			writeState(modelState,"/m/canvas1/rshorey/Grimmer/t_checkpoint.dat")
+			writeState(modelState,output)
 		modelState = gibbs(modelState,alpha0,alpha1,alpha,beta,zeta)
 
 		#estimate hyperparameters:
-		if i>100 and i%5 == 0:
+		if i>5 and i%5 == 0:
 			newParams = optimize(alpha0,alpha1,alpha,beta,zeta,1.0,modelState,5)
 			print newParams
 			alpha0 = newParams[0]
@@ -282,19 +285,20 @@ def writeState(modelState,output):
 
 #main
 input = sys.argv[1]
-alpha0 = float(sys.argv[2])
-alpha1 = float(sys.argv[3])
-alpha = float(sys.argv[4])
-beta = float(sys.argv[5])
-zeta = float(sys.argv[6])
-numTops = int(sys.argv[7])
-numIts = int(sys.argv[8])
-output = sys.argv[9]
+inputType = sys.argv[2]
+alpha0 = float(sys.argv[3])
+alpha1 = float(sys.argv[4])
+alpha = float(sys.argv[5])
+beta = float(sys.argv[6])
+zeta = float(sys.argv[7])
+numTops = int(sys.argv[8])
+numIts = int(sys.argv[9])
+output = sys.argv[10]
 
 print("classes loaded")
 modelState = getState(input)
 print("data loaded")
-modelState = initialize(modelState,zeta,numTops)
+modelState = initialize(modelState,inputType,zeta,numTops)
 print("topics and clusters initialized")
 modelState = iterate(modelState,alpha0,alpha1,alpha,beta,zeta,numIts)
 writeState(modelState,output)
